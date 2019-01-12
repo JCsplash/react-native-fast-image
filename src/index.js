@@ -1,24 +1,32 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import {
+import
+{
+    Platform,
     View,
     Image,
     NativeModules,
     requireNativeComponent,
     ViewPropTypes,
     StyleSheet,
+    PixelRatio,
 } from 'react-native'
+
+const resolveAssetSource = require('react-native/Libraries/Image/resolveAssetSource')
 
 const FastImageViewNativeModule = NativeModules.FastImageView
 
-class FastImage extends Component {
-    setNativeProps(nativeProps) {
+class FastImage extends Component
+{
+    setNativeProps(nativeProps)
+    {
         this._root.setNativeProps(nativeProps)
     }
 
     captureRef = e => (this._root = e)
 
-    render() {
+    render()
+    {
         const {
             source,
             onLoadStart,
@@ -32,12 +40,37 @@ class FastImage extends Component {
             ...props
         } = this.props
 
-        const resolvedSource = Image.resolveAssetSource(source)
+        const borderRadiusObject = style && style.borderRadius ? { borderRadius: Math.round(PixelRatio.getPixelSizeForLayoutSize(style.borderRadius)) } : {}
+        const resolvedSource = resolveAssetSource(source instanceof Object ? Object.assign({}, source, borderRadiusObject) : source)
 
-        if (fallback) {
+        if (!(source instanceof Object))
+        {
             return (
                 <View
-                    style={[styles.imageContainer, style]}
+                    style={[style, styles.imageContainer]}
+                    ref={this.captureRef}
+                >
+                    <Image
+                        {...props}
+                        style={{ width: '100%', height: '100%' }}
+                        source={resolvedSource}
+                        resizeMode={Image.resizeMode.contain}
+                        onLoadStart={onLoadStart}
+                        onProgress={onProgress}
+                        onLoad={onLoad}
+                        onError={onError}
+                        onLoadEnd={onLoadEnd}
+                    />
+                    {children}
+                </View>
+            )
+        }
+
+        if (fallback)
+        {
+            return (
+                <View
+                    style={[style, styles.imageContainer]}
                     ref={this.captureRef}
                 >
                     <FastImageView
@@ -56,7 +89,7 @@ class FastImage extends Component {
         }
 
         return (
-            <View style={[styles.imageContainer, style]} ref={this.captureRef}>
+            <View style={[style, styles.imageContainer]} ref={this.captureRef}>
                 <FastImageView
                     {...props}
                     style={StyleSheet.absoluteFill}
@@ -104,7 +137,8 @@ FastImage.cacheControl = {
     cacheOnly: 'cacheOnly',
 }
 
-FastImage.preload = sources => {
+FastImage.preload = sources =>
+{
     FastImageViewNativeModule.preload(sources)
 }
 
